@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-import getch, locations, math
+import getch, locations, math, random, sys
 class Game:
     def __init__(self):
         self.mapX = 50
         self.mapY = 15
-        self.gameSprites = {'town': '⌂', 'rock': 'O', 'player': '^', 'block': '#', 'cave': 'C', 'bg': '░', 'wild': 'W', 'zombie': '☠'}
+        self.gameSprites = {'town': '⌂', 'rock': 'O', 'player': '^', 'block': '#', 'cave': 'C', 'bg': '░', 'wild': 'W', 'zombie': 'Z'}
         self.playerCords = [5, 5]
         self.previousCords = list(self.playerCords)
         self.blocks = []
         self.places = locations.Locations()
         self.location = 'wild'
         self.gameTime = 0.0
+        self.enemies = [] # Current spawned enemies
     
     def clear(self):
         print('\033c')
@@ -51,6 +52,7 @@ class Game:
         self.gameTime = float(format(self.gameTime, '.2f'))
     
     def locationChange(self, oldLocation):
+        self.enemies.clear()
         if self.location == 'cave':
             self.playerCords = [0,0]
         elif self.location == 'wild':
@@ -65,6 +67,7 @@ class Game:
         for block in self.blocks:
             if block[0] == self.playerCords[0] and block[1] == self.playerCords[1]:
                 self.playerCords = list(self.previousCords)
+                sys.stdout.write('\a')
         for item in self.places.gameMaps[self.location]:
             if item in self.places.gameMaps:
                 try:
@@ -75,10 +78,12 @@ class Game:
                         break
                 except KeyError:
                     self.playerCords = list(self.previousCords)
+                    sys.stdout.write('\a')
             else:
                 if item in self.places.gameMaps[self.location]:
                     if self.playerCords[0] == self.places.gameMaps[self.location][item][0] and self.playerCords[1] == self.places.gameMaps[self.location][item][1]:
                         self.playerCords = list(self.previousCords)
+                        sys.stdout.write('\a')
         else:
             try:
                 self.places.mapETC[self.location]
@@ -89,6 +94,17 @@ class Game:
                     if self.playerCords[0] == self.places.mapETC[self.location][thing][0][0] and self.playerCords[1] == self.places.mapETC[self.location][thing][0][1]:
                         self.playerCords = list(self.previousCords)
     
+    def enemyHandler(self):
+        if len(self.enemies) == 0:
+            if self.location == 'wild':
+                self.enemies.append(('zombie', (0, 0)))
+        else:
+            for i in range(len(self.enemies)):
+                oldCords = self.enemies[i][1]
+                newCords = ((oldCords[0] + random.randint(0, 2)), (oldCords[1] + random.randint(0, 2)))
+                self.enemies[i] = ('zombie', newCords)
+                
+
     def printMap(self):
         for yCount in range(self.mapY):
             for xCount in range(self.mapX):
@@ -98,6 +114,9 @@ class Game:
                 for thing in self.places.gameMaps[self.location]:
                     if xCount == self.places.gameMaps[self.location][thing][0] and yCount == self.places.gameMaps[self.location][thing][1]:
                         char = self.gameSprites[thing]
+                for enemy in self.enemies:
+                    if xCount == enemy[1][1] and yCount == enemy[1][1]:
+                        char = self.gameSprites[enemy[0]]
                 try:
                     self.places.mapETC[self.location]
                 except KeyError:
@@ -106,11 +125,9 @@ class Game:
                     for thing in range(len(self.places.mapETC[self.location])):
                         if xCount == self.places.mapETC[self.location][thing][0][0] and yCount == self.places.mapETC[self.location][thing][0][1]:
                             char = self.gameSprites[self.places.mapETC[self.location][thing][1]]
-                    '''
                     for block in self.blocks:
                         if xCount == block[0] and yCount == block[1]:
                             char = self.gameSprites['block']
-                    '''
                 print(char, end='')
             print('')
 
@@ -140,11 +157,12 @@ while True:
         for block in game.blocks:
             if game.playerCords[0] == block[0] and game.playerCords[1] == block[1]:
                 break
-        for thing in game.gameMap:
-            if game.gameMap[thing][0] == game.playerCords[0] and game.gameMap[thing][1] == game.playerCords[1]:
+        for thing in game.places.gameMaps[game.location]:
+            if game.places.gameMaps[game.location][thing][0] == game.playerCords[0] and game.places.gameMaps[game.location][thing][1] == game.playerCords[1]:
                 break
         else:
             game.blocks.append((game.playerCords[0], game.playerCords[1]))
     elif c == ' ':
         game.inspect()
+    game.enemyHandler()
     game.detectCollide()
