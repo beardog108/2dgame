@@ -31,6 +31,9 @@ class Game:
         for thing in self.places.gameMaps[self.location]:
             if inspectCords[0] == self.places.gameMaps[self.location][thing][0] and inspectCords[1] == self.places.gameMaps[self.location][thing][1]:
                 inspectResult = thing
+        for block in game.blocks:
+            if inspectCords[0] == block[0] and inspectCords[1] == block[1]:
+                inspectResult = 'block'
         try:
             self.places.mapETC[self.location]
         except KeyError:
@@ -53,6 +56,7 @@ class Game:
     
     def locationChange(self, oldLocation):
         self.enemies.clear()
+        self.blocks.clear()
         if self.location == 'cave':
             self.playerCords = [0,0]
         elif self.location == 'wild':
@@ -101,8 +105,50 @@ class Game:
         else:
             for i in range(len(self.enemies)):
                 oldCords = self.enemies[i][1]
-                newCords = ((oldCords[0] + random.randint(0, 2)), (oldCords[1] + random.randint(0, 2)))
+                oldX = oldCords[0]
+                oldY = oldCords[1]
+                newX = oldX
+                newY = oldY
+                if self.playerCords[0] > oldX:
+                    newX += 1
+                elif self.playerCords[0] < oldX:
+                    newX -= 1
+                if self.playerCords[1] > oldY:
+                    newY += 1
+                elif self.playerCords[1] < oldY:
+                    newY -= 1
+                newCords = (newX, newY)
+
+                # Verify monster isnt hitting impassable tile
+                for block in self.blocks:
+                    if block[0] == newCords[0] and block[1] == newCords[1]:
+                        newCords = (oldX, oldY)
+
+                for item in self.places.gameMaps[self.location]:
+                    if item in self.places.gameMaps:
+                        try:
+                            if newCords[0] == self.places.gameMaps[self.location][item][0] and newCords[1] == self.places.gameMaps[self.location][item][1]:
+                                newCords = (oldX, oldY)
+                                break
+                        except KeyError:
+                            newCords = (oldX, oldY)
+                    else:
+                        if item in self.places.gameMaps[self.location]:
+                            if newCords[0] == self.places.gameMaps[self.location][item][0] and newCords[1] == self.places.gameMaps[self.location][item][1]:
+                                newCords = (oldX, oldY)
+                else:
+                    try:
+                        self.places.mapETC[self.location]
+                    except KeyError:
+                        pass
+                    else:
+                        for thing in range(len(self.places.mapETC[self.location])):
+                            if newCords[0] == self.places.mapETC[self.location][thing][0][0] and newCords[1] == self.places.mapETC[self.location][thing][0][1]:
+                                newCords = (oldX, oldY)
+                
                 self.enemies[i] = ('zombie', newCords)
+                if newCords[0] == self.playerCords[0] and newCords[1] == self.playerCords[1]:
+                    pass
                 
 
     def printMap(self):
@@ -115,7 +161,7 @@ class Game:
                     if xCount == self.places.gameMaps[self.location][thing][0] and yCount == self.places.gameMaps[self.location][thing][1]:
                         char = self.gameSprites[thing]
                 for enemy in self.enemies:
-                    if xCount == enemy[1][1] and yCount == enemy[1][1]:
+                    if xCount == enemy[1][0] and yCount == enemy[1][1]:
                         char = self.gameSprites[enemy[0]]
                 try:
                     self.places.mapETC[self.location]
