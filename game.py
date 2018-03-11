@@ -6,6 +6,7 @@ class Game:
         self.mapY = 15
         self.gameSprites = {'town': '⌂', 'rock': 'O', 'player': '^', 'block': '#', 'cave': 'C', 'bg': '░', 'wild': 'W', 'zombie': 'Z'}
         self.playerCords = [5, 5]
+        self.playerStats = {'heath': 10}
         self.previousCords = list(self.playerCords)
         self.blocks = []
         self.places = locations.Locations()
@@ -185,6 +186,7 @@ while True:
     game.incrementTime()
     print(game.location.upper() + ':', game.playerCords)
     print('Time:', game.gameTime)
+    print('Health:', game.playerStats['heath'])
     c = getch.getch()
     game.previousCords = list(game.playerCords)
     if c == 'w' and game.playerCords[1] != 0:
